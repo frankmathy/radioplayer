@@ -1,26 +1,21 @@
-import { useState } from 'react';
-import { RadioBrowserApi } from 'radio-browser-api';
-
-interface RadioStation {
-  id: string;
-  name: string;
-  url: string;
-}
+import { useState } from "react";
+import { RadioBrowserApi, Station } from "radio-browser-api";
 
 const RadioSearch = () => {
-  const [stationName, setStationName] = useState('');
-  const [stations, setStations] = useState<RadioStation[]>([]);
+  const [stationName, setStationName] = useState("");
+  const [stations, setStations] = useState<Station[]>([]);
 
   const handleSearch = async () => {
     try {
-      const api = new RadioBrowserApi('My Radio App');
+      const api = new RadioBrowserApi("My Radio App");
       const searchResults = await api.searchStations({
         name: stationName,
         limit: 30,
       });
       setStations(searchResults);
+      setStationName(""); // Clear the search field after search
     } catch (error) {
-      console.error('Error searching for radio stations:', error);
+      console.error("Error searching for radio stations:", error);
     }
   };
 
@@ -33,6 +28,11 @@ const RadioSearch = () => {
           id="station-name"
           value={stationName}
           onChange={(e) => setStationName(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              handleSearch();
+            }
+          }}
           placeholder="Enter station name"
         />
         <button onClick={handleSearch}>Search</button>
@@ -41,13 +41,43 @@ const RadioSearch = () => {
       {stations.length > 0 && (
         <div className="results">
           <h2>Search Results:</h2>
-          <ul>
-            {stations.map((station) => (
-              <li key={station.id}>
-                {station.name}
-              </li>
-            ))}
-          </ul>
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Homepage</th>
+                <th>Country</th>
+                <th>Codec</th>
+                <th>Bitrate</th>
+                <th>Stream</th>
+              </tr>
+            </thead>
+            <tbody>
+              {stations.map((station) => (
+                <tr key={station.id}>
+                  <td>{station.name}</td>
+                  <td>
+                    {station.homepage && (
+                      <a href={station.homepage} target="_blank" rel="noopener noreferrer">
+                        Visit
+                      </a>
+                    )}
+                  </td>
+                  <td>{station.country}</td>
+                  <td>{station.codec}</td>
+                  <td>{station.bitrate} kbps</td>
+                  <td>
+                    <button
+                      onClick={() => window.open(station.urlResolved, '_blank')}
+                      className="play-button"
+                    >
+                      Play
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>
