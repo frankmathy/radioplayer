@@ -136,3 +136,9 @@
 .search-container button:hover {
   background-color: #535bf2;
 }
+
+.no-results {
+  color: #666;
+  margin: 2rem 0;
+  font-style: italic;
+}

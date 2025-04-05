@@ -4,6 +4,7 @@ import { RadioBrowserApi, Station } from "radio-browser-api";
 const RadioSearch = () => {
   const [stationName, setStationName] = useState("");
   const [stations, setStations] = useState<Station[]>([]);
+  const [hasSearched, setHasSearched] = useState(false);
 
   const handleSearch = async () => {
     try {
@@ -13,7 +14,10 @@ const RadioSearch = () => {
         limit: 30,
       });
       setStations(searchResults);
-      setStationName(""); // Clear the search field after search
+      setHasSearched(true);
+      if (searchResults.length > 0) {
+        setStationName("");
+      }
     } catch (error) {
       console.error("Error searching for radio stations:", error);
     }
@@ -27,7 +31,11 @@ const RadioSearch = () => {
           type="text"
           id="station-name"
           value={stationName}
-          onChange={(e) => setStationName(e.target.value)}
+          onChange={(e) => {
+            setStationName(e.target.value);
+            setHasSearched(false);
+            setStations([]);
+          }}
           onKeyDown={(e) => {
             if (e.key === "Enter") {
               handleSearch();
@@ -37,6 +45,12 @@ const RadioSearch = () => {
         />
         <button onClick={handleSearch}>Search</button>
       </div>
+
+      {stations.length === 0 && hasSearched && (
+        <div className="no-results">
+          No radio stations found for "{stationName}"
+        </div>
+      )}
 
       {stations.length > 0 && (
         <div className="results">
@@ -67,10 +81,7 @@ const RadioSearch = () => {
                   <td>{station.codec}</td>
                   <td>{station.bitrate} kbps</td>
                   <td>
-                    <button
-                      onClick={() => window.open(station.urlResolved, '_blank')}
-                      className="play-button"
-                    >
+                    <button onClick={() => window.open(station.urlResolved, "_blank")} className="play-button">
                       Play
                     </button>
                   </td>
