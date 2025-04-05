@@ -9,6 +9,8 @@ const RadioPlayer = ({ streamUrl, stationName }: RadioPlayerProps) => {
   const [isRecording, setIsRecording] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const sourceNodeRef = useRef<MediaElementAudioSourceNode | null>(null);
   const chunksRef = useRef<BlobPart[]>([]);
 
   const startRecording = async () => {
@@ -16,13 +18,42 @@ const RadioPlayer = ({ streamUrl, stationName }: RadioPlayerProps) => {
       const audio = audioRef.current;
       if (!audio) return;
 
-      const audioContext = new AudioContext();
-      const source = audioContext.createMediaElementSource(audio);
-      const destination = audioContext.createMediaStreamDestination();
-      source.connect(destination);
-      source.connect(audioContext.destination);
+      // Check supported mime types
+      const mimeType = [
+        "audio/mp4",
+        "audio/mpeg",
+        "audio/aac",
+        "audio/ogg",
+        "audio/webm",
+        "audio/x-wav",
+        "", // empty string as fallback, lets browser choose format
+      ].find((type) => {
+        try {
+          return type === "" || MediaRecorder.isTypeSupported(type);
+        } catch {
+          return false;
+        }
+      });
 
-      mediaRecorderRef.current = new MediaRecorder(destination.stream);
+      if (!audioContextRef.current) {
+        audioContextRef.current = new AudioContext();
+        sourceNodeRef.current = audioContextRef.current.createMediaElementSource(audio);
+        sourceNodeRef.current.connect(audioContextRef.current.destination);
+      }
+
+      const destination = audioContextRef.current.createMediaStreamDestination();
+      sourceNodeRef.current?.connect(destination);
+
+      mediaRecorderRef.current = new MediaRecorder(
+        destination.stream,
+        mimeType
+          ? {
+              mimeType,
+              audioBitsPerSecond: 128000,
+            }
+          : undefined
+      );
+
       mediaRecorderRef.current.ondataavailable = (e) => {
         if (e.data.size > 0) {
           chunksRef.current.push(e.data);
@@ -30,18 +61,28 @@ const RadioPlayer = ({ streamUrl, stationName }: RadioPlayerProps) => {
       };
 
       mediaRecorderRef.current.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: "audio/mpeg" });
+        const fileExtension = mimeType?.includes("mp4")
+          ? "mp4"
+          : mimeType?.includes("mpeg")
+          ? "mp3"
+          : mimeType?.includes("aac")
+          ? "aac"
+          : mimeType?.includes("ogg")
+          ? "ogg"
+          : mimeType?.includes("webm")
+          ? "webm"
+          : "wav";
+        const blob = new Blob(chunksRef.current, { type: mimeType });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `${stationName}-${new Date().toISOString()}.mp3`;
+        a.download = `${stationName}-${new Date().toISOString()}.${fileExtension}`;
         a.click();
         URL.revokeObjectURL(url);
         chunksRef.current = [];
-        audioContext.close();
       };
 
-      mediaRecorderRef.current.start();
+      mediaRecorderRef.current.start(1000);
       setIsRecording(true);
     } catch (error) {
       console.error("Error starting recording:", error);
@@ -54,6 +95,15 @@ const RadioPlayer = ({ streamUrl, stationName }: RadioPlayerProps) => {
       setIsRecording(false);
     }
   };
+
+  // Clean up on unmount
+  useEffect(() => {
+    return () => {
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
+      }
+    };
+  }, []);
 
   // Add this effect to handle autoplay
   useEffect(() => {
