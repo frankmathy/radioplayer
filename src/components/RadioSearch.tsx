@@ -47,9 +47,7 @@ const RadioSearch = () => {
       </div>
 
       {stations.length === 0 && hasSearched && (
-        <div className="no-results">
-          No radio stations found for "{stationName}"
-        </div>
+        <div className="no-results">No radio stations found for "{stationName}"</div>
       )}
 
       {stations.length > 0 && (
@@ -81,7 +79,7 @@ const RadioSearch = () => {
                   <td>{station.codec}</td>
                   <td>{station.bitrate} kbps</td>
                   <td>
-                    <button onClick={() => window.open(station.urlResolved, "_blank")} className="play-button">
+                    <button onClick={() => window.open(station.url, "_blank")} className="play-button">
                       Play
                     </button>
                   </td>
