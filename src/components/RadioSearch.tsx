@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { RadioBrowserApi, Station } from "radio-browser-api";
+import RadioPlayer from './RadioPlayer';
 
 const RadioSearch = () => {
+  const [selectedStation, setSelectedStation] = useState<Station | null>(null);
   const [stationName, setStationName] = useState("");
   const [stations, setStations] = useState<Station[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
@@ -50,6 +52,13 @@ const RadioSearch = () => {
         <div className="no-results">No radio stations found for "{stationName}"</div>
       )}
 
+      {selectedStation && (
+        <RadioPlayer 
+          streamUrl={selectedStation.url} 
+          stationName={selectedStation.name} 
+        />
+      )}
+
       {stations.length > 0 && (
         <div className="results">
           <h2>Search Results:</h2>
@@ -79,7 +88,10 @@ const RadioSearch = () => {
                   <td>{station.codec}</td>
                   <td>{station.bitrate} kbps</td>
                   <td>
-                    <button onClick={() => window.open(station.url, "_blank")} className="play-button">
+                    <button 
+                      onClick={() => setSelectedStation(station)} 
+                      className="play-button"
+                    >
                       Play
                     </button>
                   </td>

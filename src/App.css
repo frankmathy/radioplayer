@@ -3,6 +3,7 @@
   margin: 0 auto;
   padding: 2rem;
   text-align: center;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 .logo {
@@ -141,4 +142,55 @@
   color: #666;
   margin: 2rem 0;
   font-style: italic;
+}
+
+.radio-player {
+  margin: 2rem 0;
+  padding: 1rem;
+  background-color: #333;
+  border-radius: 8px;
+  color: white;
+}
+
+.radio-player audio {
+  width: 100%;
+  margin-bottom: 1rem;
+  background-color: #444;
+  border-radius: 4px;
+}
+
+.recording-controls {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.record-button {
+  background-color: #dc2626;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.record-button:hover {
+  background-color: #b91c1c;
+}
+
+.record-button.recording {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
 }
