@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { RadioBrowserApi, Station } from "radio-browser-api";
-import RadioPlayer from './RadioPlayer';
+import RadioPlayer from "./RadioPlayer";
 
 const RadioSearch = () => {
   const [selectedStation, setSelectedStation] = useState<Station | null>(null);
@@ -15,9 +15,20 @@ const RadioSearch = () => {
         name: stationName,
         limit: 30,
       });
-      setStations(searchResults);
+      // Sort the results by country, city (state), and name
+      const sortedResults = searchResults.sort((a, b) => {
+        const countryCompare = (a.country || '').localeCompare(b.country || '');
+        if (countryCompare !== 0) return countryCompare;
+        
+        const cityCompare = (a.state || '').localeCompare(b.state || '');
+        if (cityCompare !== 0) return cityCompare;
+        
+        return (a.name || '').localeCompare(b.name || '');
+      });
+      
+      setStations(sortedResults);
       setHasSearched(true);
-      if (searchResults.length > 0) {
+      if (sortedResults.length > 0) {
         setStationName("");
       }
     } catch (error) {
@@ -52,12 +63,7 @@ const RadioSearch = () => {
         <div className="no-results">No radio stations found for "{stationName}"</div>
       )}
 
-      {selectedStation && (
-        <RadioPlayer 
-          streamUrl={selectedStation.url} 
-          stationName={selectedStation.name} 
-        />
-      )}
+      {selectedStation && <RadioPlayer streamUrl={selectedStation.urlResolved} stationName={selectedStation.name} />}
 
       {stations.length > 0 && (
         <div className="results">
@@ -68,6 +74,7 @@ const RadioSearch = () => {
                 <th>Name</th>
                 <th>Homepage</th>
                 <th>Country</th>
+                <th>City</th>
                 <th>Codec</th>
                 <th>Bitrate</th>
                 <th>Stream</th>
@@ -85,13 +92,11 @@ const RadioSearch = () => {
                     )}
                   </td>
                   <td>{station.country}</td>
+                  <td>{station.state}</td>
                   <td>{station.codec}</td>
                   <td>{station.bitrate} kbps</td>
                   <td>
-                    <button 
-                      onClick={() => setSelectedStation(station)} 
-                      className="play-button"
-                    >
+                    <button onClick={() => setSelectedStation(station)} className="play-button">
                       Play
                     </button>
                   </td>
