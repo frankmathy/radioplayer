@@ -13,29 +13,36 @@ const RadioPlayer = ({ streamUrl, stationName }: RadioPlayerProps) => {
 
   const startRecording = async () => {
     try {
-      const stream = audioRef.current?.captureStream();
-      if (stream) {
-        mediaRecorderRef.current = new MediaRecorder(stream);
-        mediaRecorderRef.current.ondataavailable = (e) => {
-          if (e.data.size > 0) {
-            chunksRef.current.push(e.data);
-          }
-        };
+      const audio = audioRef.current;
+      if (!audio) return;
 
-        mediaRecorderRef.current.onstop = () => {
-          const blob = new Blob(chunksRef.current, { type: "audio/ogg; codecs=opus" });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = `${stationName}-${new Date().toISOString()}.ogg`;
-          a.click();
-          URL.revokeObjectURL(url);
-          chunksRef.current = [];
-        };
+      const audioContext = new AudioContext();
+      const source = audioContext.createMediaElementSource(audio);
+      const destination = audioContext.createMediaStreamDestination();
+      source.connect(destination);
+      source.connect(audioContext.destination);
 
-        mediaRecorderRef.current.start();
-        setIsRecording(true);
-      }
+      mediaRecorderRef.current = new MediaRecorder(destination.stream);
+      mediaRecorderRef.current.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          chunksRef.current.push(e.data);
+        }
+      };
+
+      mediaRecorderRef.current.onstop = () => {
+        const blob = new Blob(chunksRef.current, { type: "audio/mpeg" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${stationName}-${new Date().toISOString()}.mp3`;
+        a.click();
+        URL.revokeObjectURL(url);
+        chunksRef.current = [];
+        audioContext.close();
+      };
+
+      mediaRecorderRef.current.start();
+      setIsRecording(true);
     } catch (error) {
       console.error("Error starting recording:", error);
     }
